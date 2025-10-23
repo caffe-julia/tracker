@@ -1,0 +1,83 @@
+# ============================================
+# Caffe Julia Tracker - .gitignore
+# ============================================
+
+# Konfigurationsdateien (enthalten Passwörter!)
+config/config.php
+
+# Logs
+logs/*.log
+logs/*
+!logs/.gitkeep
+!logs/.htaccess
+
+# Uploads (falls aktiviert)
+uploads/*
+!uploads/.gitkeep
+
+# Datenbank-Dumps
+*.sql
+*.sql.gz
+database/backup/
+backups/
+
+# Temporäre Dateien
+*.tmp
+*.cache
+*.bak
+*.swp
+*.swo
+*~
+
+# OS-spezifisch
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Composer (falls verwendet)
+vendor/
+composer.lock
+
+# NPM (falls verwendet)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Sessions
+sessions/
+
+# PHP-spezifisch
+*.php~
+.phpunit.result.cache
+
+# Test-Dateien
+tests/coverage/
+phpunit.xml
+
+# WordPress (falls in WP-Verzeichnis installiert)
+wp-config.php
+
+# Sicherheits-Dateien
+*.key
+*.pem
+*.crt
+*.pfx
+*.p12
+
+# Maintenance
+maintenance.flag
+
+# Diverse
+error_log
+debug.log
