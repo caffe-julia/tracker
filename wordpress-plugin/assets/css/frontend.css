@@ -1,0 +1,258 @@
+/**
+ * Frontend CSS für Caffe Julia Tracker Plugin
+ */
+
+/* Tracker Wrapper */
+.cjt-tracker-wrapper {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.cjt-tracker-wrapper[data-theme="dark"] {
+    background: #1f2937;
+    color: #ffffff;
+}
+
+/* Stats Header */
+.cjt-stats-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    border-bottom: 2px solid #d97706;
+}
+
+.cjt-stats-header h3 {
+    margin: 0 0 15px 0;
+    color: #78350f;
+    font-size: 20px;
+}
+
+.cjt-stats-quick {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+/* Tracker Container */
+.cjt-tracker-container {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+}
+
+.cjt-tracker-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Tracker Footer */
+.cjt-tracker-footer {
+    padding: 15px 20px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.cjt-tracker-footer small {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Stats Widget */
+.cjt-stats-widget {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+.cjt-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.cjt-stat-box {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 50%);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cjt-stat-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.cjt-stat-box.cjt-stat-events { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 50%); }
+.cjt-stat-box.cjt-stat-coffee { background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 50%); }
+.cjt-stat-box.cjt-stat-hours { background: linear-gradient(135deg, #e9d5ff 0%, #c084fc 50%); }
+.cjt-stat-box.cjt-stat-milk { background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 50%); }
+
+.cjt-stat-icon {
+    display: block;
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.cjt-stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.cjt-stat-label {
+    display: block;
+    font-size: 14px;
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.cjt-stats-period {
+    text-align: center;
+    margin-top: 15px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Widget Statistiken */
+.cjt-widget-stats {
+    padding: 0;
+}
+
+.cjt-widget-stats-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cjt-widget-stat-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cjt-widget-stat-item:last-child {
+    border-bottom: none;
+}
+
+.cjt-widget-stat-icon {
+    font-size: 20px;
+    margin-right: 10px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.cjt-widget-stat-label {
+    flex: 1;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.cjt-widget-stat-value {
+    color: #1f2937;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.cjt-widget-period {
+    margin: 15px 0 0 0;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+/* Loading */
+.cjt-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.cjt-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-top-color: #d97706;
+    border-radius: 50%;
+    animation: cjt-spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes cjt-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Error */
+.cjt-error {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #dc2626;
+    margin: 15px 0;
+}
+
+.cjt-error p {
+    margin: 0 0 10px 0;
+}
+
+.cjt-error p:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cjt-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cjt-stat-box {
+        padding: 15px;
+    }
+
+    .cjt-stat-value {
+        font-size: 24px;
+    }
+
+    .cjt-tracker-container {
+        min-height: 500px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cjt-tracker-wrapper {
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .cjt-stats-header,
+    .cjt-tracker-footer {
+        padding: 15px;
+    }
+
+    .cjt-stats-header h3 {
+        font-size: 18px;
+    }
+
+    .cjt-stat-icon {
+        font-size: 24px;
+    }
+
+    .cjt-stat-value {
+        font-size: 20px;
+    }
+
+    .cjt-stat-label {
+        font-size: 12px;
+    }
+}
