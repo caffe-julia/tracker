@@ -1,0 +1,5 @@
+# Ignoriere die echte Konfigurationsdatei (enthält Passwörter!)
+config.php
+
+# Erlaube nur die Beispiel-Datei
+!config.example.php

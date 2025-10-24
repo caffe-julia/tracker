@@ -1,0 +1,46 @@
+# ============================================
+# API .htaccess - Zusätzliche Sicherheit für API
+# ============================================
+
+# Erlaube nur API-Zugriffe
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Leite alle Anfragen an index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Verhindere direkten Zugriff auf PHP-Dateien (außer index.php)
+<FilesMatch "^(init|Database|Security|Auth|Logger)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Schütze classes Verzeichnis
+<Directory "classes">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Directory>
+
+# Schütze endpoints Verzeichnis vor direktem Zugriff
+<Directory "endpoints">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Directory>

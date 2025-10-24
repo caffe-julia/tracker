@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Caffe Julia Tracker
  * Plugin URI: https://github.com/caffe-julia/tracker
- * Description: Professionelles Event-Tracking für Cafés mit MySQL-Backend. Verwalten Sie Events, Kaffeemühlen-Zählerstände, Verbrauch und Arbeitszeiten direkt in WordPress.
- * Version: 2.0.0
+ * Description: Professionelles Event-Tracking für Cafés mit MySQL-Backend. Verwalten Sie Events, Kaffeemühlen-Zählerstände, Verbrauch und Arbeitszeiten direkt in WordPress. Mit automatischem Setup-Wizard!
+ * Version: 3.0.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -20,11 +20,16 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin-Konstanten
-define('CJT_VERSION', '2.0.0');
+define('CJT_VERSION', '3.0.0');
 define('CJT_PLUGIN_FILE', __FILE__);
 define('CJT_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJT_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('CJT_PLUGIN_BASENAME', plugin_basename(__FILE__));
+
+// Lade Setup-Wizard (nur im Admin und wenn noch nicht eingerichtet)
+if (is_admin()) {
+    require_once CJT_PLUGIN_DIR . 'includes/class-setup-wizard.php';
+}
 
 // Lade Plugin-Klasse
 require_once CJT_PLUGIN_DIR . 'includes/class-caffe-julia-tracker.php';
