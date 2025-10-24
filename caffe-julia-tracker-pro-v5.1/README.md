@@ -1,8 +1,21 @@
-# Caffe Julia Tracker Pro v5.0
+# Caffe Julia Tracker Pro v5.1
 
 **Ihr Original-Tracker - jetzt in WordPress integriert!**
 
-## ✨ Was ist neu?
+## 🆕 Version 5.1 - Bugfix Release
+
+### Behobene Probleme:
+- ✅ **Mehrtägige Events:** Alle Tage sind jetzt direkt klickbar und bearbeitbar
+- ✅ **Mitteilungsfeld:** Gilt jetzt für den GESAMTEN Event, nicht mehr pro Tag
+- ✅ **Einstellungen:** Neue Einstellungsseite im WordPress-Admin
+
+### Verbesserungen:
+- 🎨 Visuelle Hervorhebung: Einzelne Tage haben jetzt einen deutlichen orangen Rahmen
+- 👆 Klick-Feedback: Hover-Effekt zeigt, dass Tage klickbar sind
+- 📝 Zentrale Mitteilung: Mitteilung wird in der Event-Übersicht bearbeitet und gilt für alle Tage
+- ⚙️ Einstellungsseite: Zugriff auf Passwort-Verwaltung und Tracker-Informationen
+
+## ✨ Features
 
 - ✅ **100% Ihr Design** - Der Original-Tracker bleibt gleich!
 - ✅ **WordPress-Speicherung** - Daten werden in WordPress-DB gespeichert
@@ -166,6 +179,6 @@ Jetzt können Sie:
 
 ---
 
-**Version:** 5.0.0
+**Version:** 5.1.0
 **Lizenz:** GPL-2.0+
 **Author:** Caffe Julia

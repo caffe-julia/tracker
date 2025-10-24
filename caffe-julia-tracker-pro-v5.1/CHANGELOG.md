@@ -20,11 +20,20 @@
 - Jetzt in der Event-Gruppen-Ansicht (bei mehrtägigen Events)
 - Gilt für ALLE Tage des Events
 - Wird bei allen Tagen synchronisiert
+- In Einzeltag-Ansicht: Read-only mit Hinweis zur Event-Übersicht
 
 **Navigation:**
-- Alle Tage sind klickbar
+- Alle Tage haben deutlichen orangen Rahmen (3px statt Standard)
+- "→ Klicken zum Bearbeiten" Text zur Verdeutlichung
+- Hover-Effekt: Rahmen wird heller, Shadow erscheint
 - Einzelne Tage können bearbeitet werden (Mühlen, Getränke, Arbeitszeit)
 - Mitteilung wird auf Event-Ebene bearbeitet
+
+**Einstellungen:**
+- Neue Einstellungsseite im WordPress-Admin
+- Zugriff auf Passwort-Verwaltung (WordPress-Profil)
+- Tracker-Informationen (Events, Seite, URL)
+- iPhone App-Icon Anleitung
 
 ---
 

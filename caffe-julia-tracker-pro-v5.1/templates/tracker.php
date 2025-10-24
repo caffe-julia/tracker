@@ -780,13 +780,35 @@
                 const startTime = document.getElementById(`startTime${eventId}`).value;
                 const endTime = document.getElementById(`endTime${eventId}`).value;
                 const breakMinutes = parseInt(document.getElementById(`breakMinutes${eventId}`).value) || 0;
-                
+
                 event.workStartTime = startTime;
                 event.workEndTime = endTime;
                 event.workBreakMinutes = breakMinutes;
-                
+
                 saveData();
                 render();
+            }
+        }
+
+        function updateEventGroupMitteilung(baseName) {
+            const mitteilung = document.getElementById('eventGroupMitteilung').value;
+            const grouped = groupEventsByName();
+            const eventGroup = grouped[baseName];
+
+            if (eventGroup) {
+                // Aktualisiere die Mitteilung für ALLE Tage des Events
+                eventGroup.forEach(event => {
+                    event.mitteilung = mitteilung;
+                });
+                saveData();
+
+                // Zeige kurze Bestätigung
+                const textarea = document.getElementById('eventGroupMitteilung');
+                const originalBorder = textarea.style.borderColor;
+                textarea.style.borderColor = '#10b981';
+                setTimeout(() => {
+                    textarea.style.borderColor = originalBorder;
+                }, 500);
             }
         }
 
@@ -1212,15 +1234,30 @@
                         </div>
                     </div>
 
-                    <h3>📅 Einzelne Tage</h3>
+                    <h3>📝 Mitteilung für gesamtes Event</h3>
+                    <div style="margin-bottom: 24px;">
+                        <textarea
+                            id="eventGroupMitteilung"
+                            placeholder="Mitteilung für alle ${eventGroup.length} Tage..."
+                            style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #d97706; border-radius: 8px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
+                            onchange="updateEventGroupMitteilung('${currentEventGroup}')"
+                        >${eventGroup[0].mitteilung || ''}</textarea>
+                        <div style="font-size: 12px; color: #92400e; margin-top: 4px;">
+                            💡 Diese Mitteilung gilt für ALLE ${eventGroup.length} Tage des Events
+                        </div>
+                    </div>
+
+                    <h3>📅 Einzelne Tage (Klicken zum Bearbeiten)</h3>
                     ${eventGroup.map(event => {
                         const kaffees = calculateTotalKaffees(event.muehlen || []);
                         const getraenke = (event.ausgabeMatcha || 0) + (event.ausgabeSchokolade || 0) + (event.ausgabeTee || 0);
                         return `
-                            <div class="event-card" onclick="viewEvent(${event.id})" style="margin-bottom: 12px;">
+                            <div class="event-card clickable-day-card" onclick="viewEvent(${event.id})" style="margin-bottom: 12px; border: 3px solid #d97706; cursor: pointer; transition: all 0.2s;"
+                                 onmouseover="this.style.borderColor='#f59e0b'; this.style.boxShadow='0 4px 12px rgba(217,119,6,0.3)';"
+                                 onmouseout="this.style.borderColor='#d97706'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)';">
                                 <div class="event-header">
                                     <div>
-                                        <div class="event-title">${event.name}</div>
+                                        <div class="event-title">${event.name} <span style="color: #d97706;">→ Klicken zum Bearbeiten</span></div>
                                         <div class="event-date">
                                             📅 ${event.date}
                                             ${event.ganztaegig ? '<span class="duration-badge">Ganztägig</span>' : ''}
@@ -1233,11 +1270,6 @@
                                     <div class="event-stat">🍵 ${getraenke} Getränke</div>
                                     <div class="event-stat">⏱️ ${event.workHours || 0} Std</div>
                                 </div>
-                                ${event.mitteilung ? `
-                                    <div style="margin-top: 8px; padding: 8px; background: #fef3c7; border-radius: 6px; font-size: 12px; color: #78350f;">
-                                        📝 ${event.mitteilung}
-                                    </div>
-                                ` : ''}
                             </div>
                         `;
                     }).join('')}
@@ -1288,14 +1320,30 @@
                         </div>
                     </div>
 
-                    <h3>📝 Mitteilung / Notizen</h3>
-                    <div class="input-group">
-                        <textarea 
-                            placeholder="Notizen, Besonderheiten, Bemerkungen..."
-                            onchange="updateEvent(${event.id}, 'mitteilung', this.value)"
-                            style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #fde68a; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;"
-                        >${event.mitteilung || ''}</textarea>
-                    </div>
+                    ${event.isPartOfMultiDay ? `
+                        <h3>📝 Mitteilung (für gesamtes Event)</h3>
+                        <div class="input-group">
+                            <div style="background: #e9d5ff; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; color: #6b21a8;">
+                                💡 Die Mitteilung gilt für ALLE ${event.multiDayTotal} Tage. Ändern Sie sie in der Event-Übersicht.
+                            </div>
+                            <textarea
+                                readonly
+                                style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; background: #f3f4f6; cursor: not-allowed;"
+                            >${event.mitteilung || 'Keine Mitteilung'}</textarea>
+                            <button class="btn btn-info" onclick="backToGroup()" style="margin-top: 8px; width: 100%;">
+                                ← Zur Event-Übersicht (Mitteilung bearbeiten)
+                            </button>
+                        </div>
+                    ` : `
+                        <h3>📝 Mitteilung / Notizen</h3>
+                        <div class="input-group">
+                            <textarea
+                                placeholder="Notizen, Besonderheiten, Bemerkungen..."
+                                onchange="updateEvent(${event.id}, 'mitteilung', this.value)"
+                                style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #fde68a; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;"
+                            >${event.mitteilung || ''}</textarea>
+                        </div>
+                    `}
 
                     ${event.isPartOfMultiDay && event.multiDayIndex > 1 ? `
                         <div style="margin-bottom: 16px;">
