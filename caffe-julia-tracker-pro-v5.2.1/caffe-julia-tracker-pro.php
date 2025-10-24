@@ -68,6 +68,15 @@ class Caffe_Julia_Tracker_Pro {
             'dashicons-chart-bar',
             30
         );
+
+        add_submenu_page(
+            'caffe-tracker-dashboard',
+            'Einstellungen',
+            'Einstellungen',
+            'manage_options',
+            'caffe-tracker-settings',
+            array($this, 'render_settings_page')
+        );
     }
 
     public function register_rest_routes() {
@@ -214,6 +223,10 @@ class Caffe_Julia_Tracker_Pro {
 
     public function render_dashboard() {
         include CJTP_PLUGIN_DIR . 'templates/dashboard.php';
+    }
+
+    public function render_settings_page() {
+        include CJTP_PLUGIN_DIR . 'templates/settings.php';
     }
 
     public function export_csv() {
