@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.0
+ * Version: 6.0.1
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.0');
+define('CJTP_VERSION', '6.0.1');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -80,37 +80,82 @@ class Caffe_Julia_Tracker_Pro {
     }
 
     public function register_rest_routes() {
+        // Login-Endpoint (öffentlich)
+        register_rest_route('cjtp/v1', '/login', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_login'),
+            'permission_callback' => '__return_true',
+        ));
+
         // Events abrufen
         register_rest_route('cjtp/v1', '/events', array(
             'methods' => 'GET',
             'callback' => array($this, 'get_events'),
-            'permission_callback' => '__return_true',
+            'permission_callback' => array($this, 'check_tracker_permission'),
         ));
 
         // Event erstellen
         register_rest_route('cjtp/v1', '/events', array(
             'methods' => 'POST',
             'callback' => array($this, 'create_event'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => array($this, 'check_tracker_permission'),
         ));
 
         // Event aktualisieren
         register_rest_route('cjtp/v1', '/events/(?P<id>\d+)', array(
             'methods' => 'PUT',
             'callback' => array($this, 'update_event'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => array($this, 'check_tracker_permission'),
         ));
 
         // Event löschen
         register_rest_route('cjtp/v1', '/events/(?P<id>\d+)', array(
             'methods' => 'DELETE',
             'callback' => array($this, 'delete_event'),
-            'permission_callback' => array($this, 'check_permission'),
+            'permission_callback' => array($this, 'check_tracker_permission'),
         ));
     }
 
-    public function check_permission() {
-        return current_user_can('edit_posts');
+    public function check_tracker_permission() {
+        // Erlaube Zugriff wenn:
+        // 1. Benutzer ist mit Tracker-Passwort eingeloggt (Session)
+        // 2. ODER Benutzer ist WordPress-Admin
+
+        if (!session_id()) {
+            session_start();
+        }
+
+        $is_tracker_authenticated = isset($_SESSION['cjtp_authenticated']) && $_SESSION['cjtp_authenticated'] === true;
+        $is_wp_admin = current_user_can('edit_posts');
+
+        return $is_tracker_authenticated || $is_wp_admin;
+    }
+
+    public function handle_login($request) {
+        if (!session_id()) {
+            session_start();
+        }
+
+        $data = $request->get_json_params();
+        $password_hash = isset($data['passwordHash']) ? $data['passwordHash'] : '';
+
+        // Hole den gespeicherten Password-Hash aus WordPress
+        $stored_hash = get_option('cjtp_password_hash', '');
+
+        // Vergleiche Hashes
+        if ($password_hash === $stored_hash) {
+            // Login erfolgreich - setze Session
+            $_SESSION['cjtp_authenticated'] = true;
+            $_SESSION['cjtp_login_time'] = time();
+
+            return rest_ensure_response(array(
+                'success' => true,
+                'message' => 'Login erfolgreich',
+            ));
+        } else {
+            // Login fehlgeschlagen
+            return new WP_Error('invalid_password', 'Ungültiges Passwort', array('status' => 401));
+        }
     }
 
     public function get_events($request) {

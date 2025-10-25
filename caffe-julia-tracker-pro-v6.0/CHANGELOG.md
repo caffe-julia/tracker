@@ -1,5 +1,33 @@
 # Changelog - Caffe Julia Tracker Pro
 
+## Version 6.0.1 - KRITISCHER BUGFIX: Login-Authentifizierung
+
+**Veröffentlicht:** Oktober 2024
+
+### 🐛 KRITISCHER FIX: REST API Authentifizierung repariert!
+
+**Problem behoben:**
+- ✅ **"Fehler beim Laden der Events" in Edge behoben!**
+- ✅ Server-seitiger Login-Endpoint implementiert
+- ✅ PHP Session-basierte Authentifizierung für REST API
+- ✅ Cross-Browser-Login funktioniert jetzt einwandfrei
+
+**Technische Änderungen:**
+- Neuer REST API Endpoint: `/wp-json/cjtp/v1/login`
+- Client-seitiger Login ruft jetzt Server-Login auf
+- PHP Session wird beim Login gesetzt (`$_SESSION['cjtp_authenticated']`)
+- REST API Permission Callback prüft jetzt PHP Session
+- Bessere Fehlerbehandlung beim Login
+
+**Was passiert beim Login:**
+1. Passwort-Eingabe → Client hasht Passwort (SHA-256)
+2. Client validiert Hash lokal → ✅
+3. Client sendet Hash an Server → REST API `/login`
+4. Server validiert Hash und startet PHP Session → ✅
+5. Client kann jetzt REST API nutzen (Events laden/speichern) → ✅
+
+---
+
 ## Version 6.0.0 - VOLLSTÄNDIGE MYSQL-INTEGRATION!
 
 **Veröffentlicht:** Oktober 2024

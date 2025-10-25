@@ -388,30 +388,62 @@
             
             // Hash das eingegebene Passwort und vergleiche
             const inputHash = await hashPassword(input);
-            
+
             if (inputHash === APP_PASSWORD_HASH) {
-                // Generiere sicheren Session Token
-                const tokenArray = new Uint8Array(32);
-                crypto.getRandomValues(tokenArray);
-                const token = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
-                
+                // Client-seitige Validierung erfolgreich
+                // Jetzt Server-seitigen Login durchführen (für PHP Session)
                 try {
-                    sessionStorage.setItem('caffeJuliaToken', token);
-                    sessionStorage.setItem('caffeJuliaTokenTime', Date.now().toString());
+                    const loginResponse = await fetch(API_BASE + 'login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            passwordHash: inputHash
+                        })
+                    });
+
+                    if (!loginResponse.ok) {
+                        throw new Error('Server-Login fehlgeschlagen');
+                    }
+
+                    const loginData = await loginResponse.json();
+
+                    if (loginData.success) {
+                        // Server-Login erfolgreich - PHP Session ist jetzt gesetzt
+                        // Generiere sicheren Session Token für Client
+                        const tokenArray = new Uint8Array(32);
+                        crypto.getRandomValues(tokenArray);
+                        const token = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                        try {
+                            sessionStorage.setItem('caffeJuliaToken', token);
+                            sessionStorage.setItem('caffeJuliaTokenTime', Date.now().toString());
+                        } catch(e) {
+                            console.log('SessionStorage nicht verfügbar');
+                        }
+                        isAuthenticated = true;
+                        sessionToken = token;
+                        errorMsg.style.display = 'none';
+                        attemptsMsg.style.display = 'none';
+                        loginAttempts = 0;
+                        startApp();
+                    } else {
+                        throw new Error('Server-Authentifizierung fehlgeschlagen');
+                    }
                 } catch(e) {
-                    console.log('SessionStorage nicht verfügbar');
+                    console.error('Login-Fehler:', e);
+                    errorMsg.textContent = 'Server-Verbindungsfehler. Bitte erneut versuchen.';
+                    errorMsg.style.display = 'block';
+                    document.getElementById('passwordInput').value = '';
+                    document.getElementById('passwordInput').focus();
                 }
-                isAuthenticated = true;
-                sessionToken = token;
-                errorMsg.style.display = 'none';
-                attemptsMsg.style.display = 'none';
-                loginAttempts = 0;
-                startApp();
             } else {
+                errorMsg.textContent = 'Falsches Passwort';
                 errorMsg.style.display = 'block';
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('passwordInput').focus();
-                
+
                 // Log fehlgeschlagenen Versuch (nur in Console für Debugging)
                 console.warn('Fehlgeschlagener Login-Versuch: ' + new Date().toISOString());
             }
