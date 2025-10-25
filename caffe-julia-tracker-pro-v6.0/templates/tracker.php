@@ -254,8 +254,8 @@
     <script>
         // PASSWORTSCHUTZ - Security Enhanced
         // Passwort wird NICHT im Klartext gespeichert
-        // Hash generiert mit: SHA-256('CyberSecure' + Salt)
-        const APP_PASSWORD_HASH = '<?php echo get_option("cjtp_password_hash", "c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893e1ae3af7c1cba2168c"); ?>';
+        // Hash generiert mit: SHA-256('CaffeJulia2025' + Salt)
+        const APP_PASSWORD_HASH = '<?php echo get_option("cjtp_password_hash", "3f15fdc8b618a9ea5007b26655acfb904daa571a3cf2cfa6f932fae79e63fdaa"); ?>';
         const SALT = 'CaffeJulia2025SecureSalt'; // Salt für zusätzliche Sicherheit
         
         // SHA-256 Hash Funktion (Native Web Crypto API)

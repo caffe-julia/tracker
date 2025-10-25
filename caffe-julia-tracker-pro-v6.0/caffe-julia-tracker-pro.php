@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.3
+ * Version: 6.0.4
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.3');
+define('CJTP_VERSION', '6.0.4');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -23,6 +23,7 @@ class Caffe_Julia_Tracker_Pro {
     public function __construct() {
         // Session früh starten
         add_action('init', array($this, 'start_session'), 1);
+        add_action('init', array($this, 'check_password_hash'), 2);
 
         register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('init', array($this, 'register_post_type'));
@@ -56,6 +57,28 @@ class Caffe_Julia_Tracker_Pro {
     public function start_session() {
         if (!session_id()) {
             session_start();
+        }
+    }
+
+    public function check_password_hash() {
+        // Prüfe ob alter Hash aktiv ist und aktualisiere ihn
+        $current_hash = get_option('cjtp_password_hash');
+
+        // Alte Hashes (aus vorherigen Versionen)
+        $old_hashes = array(
+            'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893e1ae3af7c1cba2168c', // Alter Hash für "CyberSecure"
+        );
+
+        // Wenn alter Hash oder kein Hash vorhanden
+        if (empty($current_hash) || in_array($current_hash, $old_hashes)) {
+            // Setze neuen Standard-Hash
+            $default_password = 'CaffeJulia2025';
+            $salt = 'CaffeJulia2025SecureSalt';
+            $new_hash = hash('sha256', $default_password . $salt);
+
+            update_option('cjtp_password_hash', $new_hash);
+
+            error_log('Caffe Julia Tracker: Passwort-Hash aktualisiert auf v6.0.3 Standard');
         }
     }
 

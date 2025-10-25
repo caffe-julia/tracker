@@ -1,5 +1,43 @@
 # Changelog - Caffe Julia Tracker Pro
 
+## Version 6.0.4 - KRITISCHER FIX: Login funktioniert jetzt!
+
+**Veröffentlicht:** Oktober 2024
+
+### 🐛 KRITISCHER FIX: Password-Hash korrigiert!
+
+**Problem behoben:**
+- ✅ **"Server-Verbindungsfehler" beim Login behoben!**
+- ✅ **Korrekter Password-Hash für "CaffeJulia2025"**
+- ✅ **Auto-Update für alte Installationen**
+- ✅ **Login funktioniert jetzt einwandfrei!**
+
+**Was war das Problem:**
+- Alter Hash für "CyberSecure" war noch im Code
+- Neues Passwort "CaffeJulia2025" hatte falschen Hash
+- Login schlug fehl → "Server-Verbindungsfehler"
+
+**Was wurde repariert:**
+- Korrekter Hash: `3f15fdc8b618a9ea5007b26655acfb904daa571a3cf2cfa6f932fae79e63fdaa`
+- Default-Hash in tracker.php korrigiert
+- Auto-Update Funktion: Prüft beim `init` Hook ob alter Hash aktiv ist
+- Alte Installationen werden automatisch aktualisiert
+
+**Verwendung:**
+1. Plugin v6.0.4 installieren
+2. **AUTOMATISCH:** Alter Hash wird erkannt und aktualisiert
+3. Tracker öffnen
+4. Login mit: `CaffeJulia2025`
+5. Funktioniert! ✅
+
+**Technische Details:**
+- Password: `CaffeJulia2025`
+- Salt: `CaffeJulia2025SecureSalt`
+- Hash: `3f15fdc8b618a9ea5007b26655acfb904daa571a3cf2cfa6f932fae79e63fdaa`
+- Auto-Update: `check_password_hash()` in init Hook (Priorität 2)
+
+---
+
 ## Version 6.0.3 - Passwort-Verwaltung vereinfacht!
 
 **Veröffentlicht:** Oktober 2024
