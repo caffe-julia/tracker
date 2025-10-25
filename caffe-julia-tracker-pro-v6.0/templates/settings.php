@@ -11,6 +11,17 @@ function cjtp_generate_hash($password) {
 $success_message = '';
 $error_message = '';
 
+// HASH REPARIEREN BUTTON
+if (isset($_POST['cjtp_fix_hash'])) {
+    check_admin_referer('cjtp_fix_hash');
+
+    // Setze korrekten Hash für CaffeJulia2025
+    $correct_hash = cjtp_generate_hash('CaffeJulia2025');
+    update_option('cjtp_password_hash', $correct_hash);
+
+    $success_message = '✅ Passwort-Hash wurde repariert! Login sollte jetzt mit "CaffeJulia2025" funktionieren.';
+}
+
 if (isset($_POST['cjtp_save_tracker_password'])) {
     check_admin_referer('cjtp_tracker_password');
 
@@ -32,10 +43,10 @@ if (isset($_POST['cjtp_save_tracker_password'])) {
 }
 
 // Aktuelles Passwort-Hash
-// Standard-Passwort: "CaffeJulia2025" mit Salt "CaffeJulia2025SecureSalt"
-$default_hash = cjtp_generate_hash('CaffeJulia2025'); // = '2f0f7f8c9a8f7c6b5d4e3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a21'
-$current_hash = get_option('cjtp_password_hash', $default_hash);
-$is_default = ($current_hash === $default_hash);
+$correct_hash = cjtp_generate_hash('CaffeJulia2025');
+$current_hash = get_option('cjtp_password_hash', '');
+$is_default = ($current_hash === $correct_hash);
+$hash_is_wrong = !empty($current_hash) && ($current_hash !== $correct_hash);
 ?>
 <div class="wrap">
     <h1>⚙️ Caffe Julia Tracker - Einstellungen</h1>
@@ -49,6 +60,23 @@ $is_default = ($current_hash === $default_hash);
     <?php if ($error_message): ?>
         <div class="notice notice-error is-dismissible">
             <p>❌ <?php echo esc_html($error_message); ?></p>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($hash_is_wrong): ?>
+        <div class="notice notice-error">
+            <h3 style="margin-top: 10px;">🚨 PROBLEM: Falscher Passwort-Hash erkannt!</h3>
+            <p><strong>Der Login funktioniert nicht, weil der Passwort-Hash in der Datenbank falsch ist.</strong></p>
+            <p>Klicken Sie auf den Button unten, um den Hash zu reparieren:</p>
+            <form method="post" action="" style="margin: 10px 0;">
+                <?php wp_nonce_field('cjtp_fix_hash'); ?>
+                <button type="submit" name="cjtp_fix_hash" class="button button-primary button-hero" style="background: #dc2626; border-color: #b91c1c;">
+                    🔧 Passwort-Hash jetzt reparieren
+                </button>
+            </form>
+            <p style="font-size: 12px; color: #666;">
+                Nach dem Klick können Sie sich mit <code>CaffeJulia2025</code> einloggen.
+            </p>
         </div>
     <?php endif; ?>
 
