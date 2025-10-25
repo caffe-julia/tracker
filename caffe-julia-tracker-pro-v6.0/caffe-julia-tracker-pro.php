@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 7.0: WordPress-Authentifizierung!
- * Version: 7.0.0
+ * Version: 7.0.1
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '7.0.0');
+define('CJTP_VERSION', '7.0.1');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -111,9 +111,9 @@ class Caffe_Julia_Tracker_Pro {
     }
 
     public function check_tracker_permission() {
-        // Erlaube Zugriff nur für eingeloggte WordPress-Benutzer
+        // Erlaube Zugriff für ALLE eingeloggten WordPress-Benutzer
         // Die Seite selbst sollte mit WordPress "Privat" oder "Password Protected" Plugin geschützt werden
-        return current_user_can('edit_posts');
+        return is_user_logged_in();
     }
 
 
