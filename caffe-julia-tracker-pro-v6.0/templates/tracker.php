@@ -439,31 +439,108 @@
         var currentEventGroup = null;
         var nextId = 1;
 
-        function initializeApp() {
-        // Fehlerbehandlung für localStorage
-        try {
-            events = JSON.parse(localStorage.getItem('caffeJuliaEvents')) || [];
-        } catch(e) {
-            console.error('LocalStorage Fehler:', e);
-            alert('Hinweis: Datenspeicherung funktioniert möglicherweise nicht im privaten Modus.');
-            events = [];
-        }
-        
-        nextId = events.length > 0 ? Math.max(...events.map(function(e) { return e.id; })) + 1 : 1;
-        
-        // Starte Rendering
-        render();
-        } // Ende initializeApp
+        // WordPress REST API Configuration
+        const API_BASE = '<?php echo rest_url("cjtp/v1/"); ?>';
+        const API_NONCE = '<?php echo wp_create_nonce("wp_rest"); ?>';
 
-        function saveData() {
+        // Initialisierung mit WordPress-Daten
+        async function initializeApp() {
             try {
-                // Validiere Daten vor dem Speichern
-                const sanitizedEvents = events.map(sanitizeEvent);
-                localStorage.setItem('caffeJuliaEvents', JSON.stringify(sanitizedEvents));
+                await loadEventsFromWordPress();
+                nextId = events.length > 0 ? Math.max(...events.map(function(e) { return e.id; })) + 1 : 1;
+                render();
             } catch(e) {
-                console.error('Speichern fehlgeschlagen:', e);
-                alert('Warnung: Daten konnten nicht gespeichert werden. Bitte Safari nicht im privaten Modus verwenden.');
+                console.error('Initialisierung fehlgeschlagen:', e);
+                alert('Fehler beim Laden der Events. Bitte Seite neu laden.');
+                events = [];
+                render();
             }
+        }
+
+        // Events von WordPress laden
+        async function loadEventsFromWordPress() {
+            try {
+                const response = await fetch(API_BASE + 'events', {
+                    headers: {
+                        'X-WP-Nonce': API_NONCE
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const data = await response.json();
+                events = data || [];
+                console.log('✅ Events geladen:', events.length);
+            } catch(e) {
+                console.error('❌ Laden fehlgeschlagen:', e);
+                throw e;
+            }
+        }
+
+        // Event in WordPress speichern
+        async function saveEventToWordPress(event) {
+            try {
+                const url = API_BASE + 'events' + (event.wpId ? '/' + event.wpId : '');
+                const method = event.wpId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': API_NONCE
+                    },
+                    body: JSON.stringify(event)
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const result = await response.json();
+
+                // Speichere WordPress-ID
+                if (!event.wpId && result.id) {
+                    event.wpId = result.id;
+                }
+
+                console.log('✅ Event gespeichert:', event.name);
+                return true;
+            } catch(e) {
+                console.error('❌ Speichern fehlgeschlagen:', e);
+                alert('Fehler beim Speichern: ' + e.message);
+                return false;
+            }
+        }
+
+        // Event aus WordPress löschen
+        async function deleteEventFromWordPress(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event || !event.wpId) return true;
+
+            try {
+                await fetch(API_BASE + 'events/' + event.wpId, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-WP-Nonce': API_NONCE
+                    }
+                });
+                console.log('✅ Event gelöscht:', event.name);
+                return true;
+            } catch(e) {
+                console.error('❌ Löschen fehlgeschlagen:', e);
+                return false;
+            }
+        }
+
+        // Globale saveData() - ruft für JEDES Event saveEventToWordPress auf
+        async function saveData() {
+            // Speichere alle modifizierten Events
+            for (const event of events) {
+                await saveEventToWordPress(event);
+            }
+            render();
         }
 
         // XSS Protection: Sanitize user input
@@ -500,7 +577,7 @@
             return Math.max(min, Math.min(max, num));
         }
 
-        function copyPreviousDayStands(currentEvent) {
+        async function copyPreviousDayStands(currentEvent) {
             // Nur bei mehrtägigen Events
             if (!currentEvent.isPartOfMultiDay || currentEvent.multiDayIndex === 1) {
                 return; // Erster Tag oder kein mehrtägiges Event
@@ -510,9 +587,9 @@
             const baseName = getEventBaseName(currentEvent.name);
             const previousDayIndex = currentEvent.multiDayIndex - 1;
             const previousDayName = baseName + ' - Tag ' + previousDayIndex;
-            
+
             const previousEvent = events.find(e => e.name === previousDayName);
-            
+
             if (previousEvent && previousEvent.muehlen && currentEvent.muehlen) {
                 // Kopiere für jede Mühle
                 for (let i = 0; i < currentEvent.muehlen.length; i++) {
@@ -522,7 +599,7 @@
                             currentEvent.muehlen[i].doppelBezug = { start: 0, ende: 0 };
                         }
                         currentEvent.muehlen[i].doppelBezug.start = previousEvent.muehlen[i].doppelBezug?.ende || 0;
-                        
+
                         // Einzelbezug: Endstand vom Vortag wird Anfangsstand heute
                         if (!currentEvent.muehlen[i].einzelBezug) {
                             currentEvent.muehlen[i].einzelBezug = { start: 0, ende: 0 };
@@ -530,7 +607,7 @@
                         currentEvent.muehlen[i].einzelBezug.start = previousEvent.muehlen[i].einzelBezug?.ende || 0;
                     }
                 }
-                saveData();
+                await saveEventToWordPress(currentEvent);
                 return true;
             }
             return false;
@@ -565,9 +642,7 @@
             render();
         }
 
-        function saveData() {
-            localStorage.setItem('caffeJuliaEvents', JSON.stringify(events));
-        }
+        // saveData() ist bereits oben definiert (async version)
 
         function addNewEvent() {
             currentView = 'new';
@@ -579,7 +654,7 @@
             render();
         }
 
-        function saveNewEvent() {
+        async function saveNewEvent() {
             const eventName = document.getElementById('eventName').value;
             const mehrtagig = document.getElementById('mehrtagig').checked;
             const ganztaegig = document.getElementById('ganztaegig').checked;
@@ -591,25 +666,25 @@
             }
 
             let dates = [];
-            
+
             if (mehrtagig) {
                 const startDate = document.getElementById('startDate').value;
                 const endDate = document.getElementById('endDate').value;
-                
+
                 if (!startDate || !endDate) {
                     alert('Bitte Start- und Enddatum eingeben');
                     return;
                 }
-                
+
                 // Generiere alle Daten zwischen Start und Ende
                 const start = new Date(startDate);
                 const end = new Date(endDate);
-                
+
                 if (end < start) {
                     alert('Enddatum muss nach Startdatum liegen');
                     return;
                 }
-                
+
                 for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
                     dates.push(d.toISOString().split('T')[0]);
                 }
@@ -622,8 +697,11 @@
                 dates.push(eventDate);
             }
 
+            const newEvents = [];
+
             // Erstelle für jeden Tag ein separates Event
-            dates.forEach((date, index) => {
+            for (let index = 0; index < dates.length; index++) {
+                const date = dates[index];
                 const dayNumber = dates.length > 1 ? ` - Tag ${index + 1}` : '';
                 const newEvent = {
                     id: nextId++,
@@ -653,12 +731,17 @@
                 }
 
                 events.push(newEvent);
-            });
+                newEvents.push(newEvent);
+            }
 
-            saveData();
+            // Speichere alle neuen Events zu WordPress
+            for (const evt of newEvents) {
+                await saveEventToWordPress(evt);
+            }
+
             currentView = 'overview';
             render();
-            
+
             if (dates.length > 1) {
                 alert(`${dates.length} Events (${dates[0]} bis ${dates[dates.length-1]}) wurden erstellt`);
             }
@@ -701,7 +784,7 @@
             render();
         }
 
-        function updateEvent(id, field, value) {
+        async function updateEvent(id, field, value) {
             const event = events.find(e => e.id === id);
             if (event) {
                 // Input Validation basierend auf Feld-Typ
@@ -727,23 +810,23 @@
                     default:
                         event[field] = value;
                 }
-                saveData();
+                await saveEventToWordPress(event);
                 render();
             }
         }
 
-        function updateMuehle(eventId, muehleIndex, bezugType, field, value) {
+        async function updateMuehle(eventId, muehleIndex, bezugType, field, value) {
             const event = events.find(e => e.id === eventId);
             if (event && event.muehlen[muehleIndex]) {
                 // Validiere numerische Eingabe
                 const validatedValue = validateInteger(value, 0, 999999);
-                
+
                 if (bezugType === 'doppel') {
                     event.muehlen[muehleIndex].doppelBezug[field] = validatedValue;
                 } else {
                     event.muehlen[muehleIndex].einzelBezug[field] = validatedValue;
                 }
-                saveData();
+                await saveEventToWordPress(event);
                 render();
             }
         }
@@ -769,23 +852,23 @@
             
             // Update workHours field
             event.workHours = parseFloat(hours);
-            saveData();
-            
+            saveEventToWordPress(event); // Async, fire and forget
+
             return hours;
         }
 
-        function updateWorkTime(eventId) {
+        async function updateWorkTime(eventId) {
             const event = events.find(e => e.id === eventId);
             if (event) {
                 const startTime = document.getElementById(`startTime${eventId}`).value;
                 const endTime = document.getElementById(`endTime${eventId}`).value;
                 const breakMinutes = parseInt(document.getElementById(`breakMinutes${eventId}`).value) || 0;
-                
+
                 event.workStartTime = startTime;
                 event.workEndTime = endTime;
                 event.workBreakMinutes = breakMinutes;
-                
-                saveData();
+
+                await saveEventToWordPress(event);
                 render();
             }
         }
@@ -814,45 +897,53 @@
             };
         }
 
-        function increment(id, field) {
+        async function increment(id, field) {
             const event = events.find(e => e.id === id);
             if (event) {
                 event[field] = (event[field] || 0) + 1;
-                saveData();
+                await saveEventToWordPress(event);
                 render();
             }
         }
 
-        function decrement(id, field) {
+        async function decrement(id, field) {
             const event = events.find(e => e.id === id);
             if (event && event[field] > 0) {
                 event[field]--;
-                saveData();
+                await saveEventToWordPress(event);
                 render();
             }
         }
 
-        function deleteEvent(id) {
+        async function deleteEvent(id) {
             if (confirm('Event wirklich löschen?')) {
+                // Lösche zuerst aus WordPress
+                await deleteEventFromWordPress(id);
+
+                // Dann aus lokalem Array entfernen
                 events = events.filter(e => e.id !== id);
-                saveData();
                 currentView = 'overview';
                 render();
             }
         }
 
-        function deleteEventGroup(baseName) {
+        async function deleteEventGroup(baseName) {
             const grouped = groupEventsByName();
             const eventGroup = grouped[baseName];
             const eventCount = eventGroup.length;
-            
+
             if (confirm(`Gesamtes Event "${baseName}" mit allen ${eventCount} Tag(en) wirklich löschen?`)) {
-                // Lösche alle Events dieser Gruppe
+                // Lösche alle Events dieser Gruppe aus WordPress
+                for (const event of eventGroup) {
+                    await deleteEventFromWordPress(event.id);
+                }
+
+                // Dann aus lokalem Array entfernen
                 events = events.filter(e => {
                     const eventBaseName = e.isPartOfMultiDay ? getEventBaseName(e.name) : e.name;
                     return eventBaseName !== baseName;
                 });
-                saveData();
+
                 currentView = 'overview';
                 currentEventGroup = null;
                 render();
@@ -903,21 +994,21 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const text = e.target.result;
                     const lines = text.split('\n');
                     const imported = [];
-                    
+
                     // Skip header
                     for (let i = 1; i < lines.length; i++) {
                         const line = lines[i].trim();
                         if (!line) continue;
-                        
+
                         // Einfaches CSV-Parsing
                         const cols = line.split(';');
                         if (cols.length < 10) continue;
-                        
+
                         imported.push({
                             id: nextId++,
                             name: cols[0].replace(/^"|"$/g, '').replace(/""/g, '"'),
@@ -937,10 +1028,15 @@
                             muehlen: []
                         });
                     }
-                    
+
                     if (imported.length > 0 && confirm(imported.length + ' Events importieren? Dies überschreibt alle aktuellen Daten.')) {
                         events = imported;
-                        saveData();
+
+                        // Speichere alle importierten Events zu WordPress
+                        for (const evt of imported) {
+                            await saveEventToWordPress(evt);
+                        }
+
                         render();
                     }
                 } catch(err) {
