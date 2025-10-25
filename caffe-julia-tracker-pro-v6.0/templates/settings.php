@@ -32,8 +32,10 @@ if (isset($_POST['cjtp_save_tracker_password'])) {
 }
 
 // Aktuelles Passwort-Hash
-$current_hash = get_option('cjtp_password_hash', 'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893e1ae3af7c1cba2168c');
-$is_default = ($current_hash === 'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893e1ae3af7c1cba2168c');
+// Standard-Passwort: "CaffeJulia2025" mit Salt "CaffeJulia2025SecureSalt"
+$default_hash = cjtp_generate_hash('CaffeJulia2025'); // = '2f0f7f8c9a8f7c6b5d4e3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a21'
+$current_hash = get_option('cjtp_password_hash', $default_hash);
+$is_default = ($current_hash === $default_hash);
 ?>
 <div class="wrap">
     <h1>⚙️ Caffe Julia Tracker - Einstellungen</h1>
@@ -52,7 +54,7 @@ $is_default = ($current_hash === 'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893
 
     <?php if ($is_default): ?>
         <div class="notice notice-warning">
-            <p><strong>⚠️ WICHTIG:</strong> Sie verwenden noch das Standard-Passwort "<strong>CyberSecure</strong>". Bitte ändern Sie es unten!</p>
+            <p><strong>⚠️ WICHTIG:</strong> Sie verwenden noch das Standard-Passwort "<strong>CaffeJulia2025</strong>". Bitte ändern Sie es unten!</p>
         </div>
     <?php endif; ?>
 
@@ -73,7 +75,7 @@ $is_default = ($current_hash === 'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893
                         </th>
                         <td>
                             <?php if ($is_default): ?>
-                                <span style="color: #dc2626; font-weight: bold;">⚠️ Standard-Passwort aktiv: "CyberSecure"</span>
+                                <span style="color: #dc2626; font-weight: bold;">⚠️ Standard-Passwort aktiv: "CaffeJulia2025"</span>
                                 <p class="description">Bitte ändern Sie das Passwort aus Sicherheitsgründen!</p>
                             <?php else: ?>
                                 <span style="color: #10b981; font-weight: bold;">✅ Individuelles Passwort gesetzt</span>

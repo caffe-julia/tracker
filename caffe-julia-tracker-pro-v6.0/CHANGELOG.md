@@ -1,5 +1,46 @@
 # Changelog - Caffe Julia Tracker Pro
 
+## Version 6.0.3 - Passwort-Verwaltung vereinfacht!
+
+**Veröffentlicht:** Oktober 2024
+
+### ✅ FERTIG: Einfache Passwort-Verwaltung!
+
+**Problem behoben:**
+- ✅ **Standard-Passwort wird automatisch beim Plugin-Aktivieren gesetzt!**
+- ✅ **"Passwort vergessen" Link direkt im Login-Screen!**
+- ✅ **Standard-Passwort sichtbar im Login-Screen**
+- ✅ **Kein phpMyAdmin mehr nötig!**
+
+**Was ist neu:**
+1. **Aktivierungs-Hook:** Plugin setzt automatisch Standard-Passwort beim Aktivieren
+2. **"Passwort vergessen" Link:** Führt direkt zur WordPress-Admin Einstellungsseite
+3. **Standard-Passwort Anzeige:** Im Login-Screen sichtbar (`CaffeJulia2025`)
+4. **Einstellungen korrigiert:** Standard-Passwort richtig angezeigt
+
+**Verwendung:**
+1. Plugin installieren & aktivieren → Standard-Passwort wird gesetzt
+2. Tracker öffnen: `https://ihre-domain.ch/mein-tracker`
+3. Login mit: `CaffeJulia2025`
+4. Passwort ändern:
+   - Klick auf "Passwort vergessen?" Link
+   - ODER: WordPress-Admin → Caffe Tracker → Einstellungen
+   - Neues Passwort eingeben (mind. 6 Zeichen)
+   - Speichern → Fertig!
+
+**Standard-Passwort:**
+- Passwort: `CaffeJulia2025`
+- Hash: SHA-256 mit Salt `CaffeJulia2025SecureSalt`
+- Wird automatisch beim Plugin-Aktivieren in `wp_options` gespeichert
+
+**Technische Änderungen:**
+- `activate()` Methode: Setzt Standard-Passwort bei Plugin-Aktivierung
+- Login-Screen: "Passwort vergessen" Link hinzugefügt
+- Login-Screen: Standard-Passwort wird angezeigt
+- Settings-Page: Standard-Passwort Text korrigiert
+
+---
+
 ## Version 6.0.2 - KRITISCHER BUGFIX: Session & Cookie Persistenz
 
 **Veröffentlicht:** Oktober 2024

@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.2
+ * Version: 6.0.3
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.2');
+define('CJTP_VERSION', '6.0.3');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -24,6 +24,7 @@ class Caffe_Julia_Tracker_Pro {
         // Session früh starten
         add_action('init', array($this, 'start_session'), 1);
 
+        register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('init', array($this, 'register_post_type'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -33,6 +34,23 @@ class Caffe_Julia_Tracker_Pro {
         // AJAX Actions
         add_action('wp_ajax_cjtp_export_csv', array($this, 'export_csv'));
         add_action('wp_ajax_cjtp_get_stats', array($this, 'get_statistics'));
+    }
+
+    public function activate() {
+        // Setze Standard-Passwort wenn noch keins gesetzt ist
+        $existing_hash = get_option('cjtp_password_hash');
+
+        if (empty($existing_hash)) {
+            // Standard-Passwort: "CaffeJulia2025"
+            $default_password = 'CaffeJulia2025';
+            $salt = 'CaffeJulia2025SecureSalt';
+            $password_hash = hash('sha256', $default_password . $salt);
+
+            update_option('cjtp_password_hash', $password_hash);
+
+            // Log für Admin
+            error_log('Caffe Julia Tracker: Standard-Passwort gesetzt - "CaffeJulia2025"');
+        }
     }
 
     public function start_session() {

@@ -331,6 +331,16 @@
                     <button class="btn btn-primary" onclick="checkPassword()" id="loginBtn" style="width: 100%;">
                         Anmelden
                     </button>
+                    <div style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                        <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Passwort vergessen?</p>
+                        <a href="<?php echo admin_url('admin.php?page=caffe-tracker-settings'); ?>"
+                           style="color: #92400e; text-decoration: none; font-weight: 500; font-size: 14px;">
+                            → Zum WordPress-Admin (Passwort ändern)
+                        </a>
+                        <p style="font-size: 12px; color: #9ca3af; margin-top: 12px;">
+                            Standard-Passwort: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px;">CaffeJulia2025</code>
+                        </p>
+                    </div>
                 </div>
             `;
             // Fokus auf Passwort-Feld
