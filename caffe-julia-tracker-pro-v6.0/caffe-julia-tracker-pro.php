@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.1
+ * Version: 6.0.2
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,13 +14,16 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.1');
+define('CJTP_VERSION', '6.0.2');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 class Caffe_Julia_Tracker_Pro {
 
     public function __construct() {
+        // Session früh starten
+        add_action('init', array($this, 'start_session'), 1);
+
         add_action('init', array($this, 'register_post_type'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -30,6 +33,12 @@ class Caffe_Julia_Tracker_Pro {
         // AJAX Actions
         add_action('wp_ajax_cjtp_export_csv', array($this, 'export_csv'));
         add_action('wp_ajax_cjtp_get_stats', array($this, 'get_statistics'));
+    }
+
+    public function start_session() {
+        if (!session_id()) {
+            session_start();
+        }
     }
 
     public function register_post_type() {
@@ -119,16 +128,26 @@ class Caffe_Julia_Tracker_Pro {
     public function check_tracker_permission() {
         // Erlaube Zugriff wenn:
         // 1. Benutzer ist mit Tracker-Passwort eingeloggt (Session)
-        // 2. ODER Benutzer ist WordPress-Admin
+        // 2. ODER Benutzer hat gültigen Auth-Cookie
+        // 3. ODER Benutzer ist WordPress-Admin
 
         if (!session_id()) {
             session_start();
         }
 
+        // Prüfe Session
         $is_tracker_authenticated = isset($_SESSION['cjtp_authenticated']) && $_SESSION['cjtp_authenticated'] === true;
+
+        // Prüfe Cookie
+        $has_valid_cookie = false;
+        if (isset($_COOKIE['cjtp_auth_token']) && isset($_SESSION['cjtp_token'])) {
+            $has_valid_cookie = $_COOKIE['cjtp_auth_token'] === $_SESSION['cjtp_token'];
+        }
+
+        // Prüfe WordPress-Admin
         $is_wp_admin = current_user_can('edit_posts');
 
-        return $is_tracker_authenticated || $is_wp_admin;
+        return $is_tracker_authenticated || $has_valid_cookie || $is_wp_admin;
     }
 
     public function handle_login($request) {
@@ -148,9 +167,17 @@ class Caffe_Julia_Tracker_Pro {
             $_SESSION['cjtp_authenticated'] = true;
             $_SESSION['cjtp_login_time'] = time();
 
+            // Setze auch einen Cookie für 8 Stunden
+            $token = bin2hex(random_bytes(32));
+            $_SESSION['cjtp_token'] = $token;
+
+            // Cookie setzen (8 Stunden = 28800 Sekunden)
+            setcookie('cjtp_auth_token', $token, time() + 28800, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+
             return rest_ensure_response(array(
                 'success' => true,
                 'message' => 'Login erfolgreich',
+                'token' => $token,
             ));
         } else {
             // Login fehlgeschlagen

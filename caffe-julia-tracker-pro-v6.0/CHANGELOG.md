@@ -1,5 +1,47 @@
 # Changelog - Caffe Julia Tracker Pro
 
+## Version 6.0.2 - KRITISCHER BUGFIX: Session & Cookie Persistenz
+
+**Veröffentlicht:** Oktober 2024
+
+### 🐛 KRITISCHER FIX: Session-Persistenz repariert!
+
+**Problem behoben:**
+- ✅ **"REST API restricted to authenticated users" behoben!**
+- ✅ Session wird jetzt früh gestartet (init Hook mit Priorität 1)
+- ✅ Auth-Cookie wird beim Login gesetzt (8 Stunden Gültigkeit)
+- ✅ Permission Callback prüft jetzt Session UND Cookie
+- ✅ Cross-Browser-Persistenz funktioniert jetzt!
+
+**Technische Änderungen:**
+- `start_session()` Methode hinzugefügt (aufgerufen bei 'init', Priorität 1)
+- Login setzt jetzt Auth-Cookie: `cjtp_auth_token` (8h Gültigkeit)
+- Session speichert Token: `$_SESSION['cjtp_token']`
+- `check_tracker_permission()` prüft jetzt: Session || Cookie || WP-Admin
+- Cookie-Flags: HttpOnly=true, Secure=is_ssl()
+
+**Was passiert beim Login (v6.0.2):**
+1. Passwort-Eingabe → Client hasht (SHA-256)
+2. Client POST zu /login mit Hash
+3. Server validiert Hash
+4. Server startet Session: `$_SESSION['cjtp_authenticated'] = true`
+5. Server generiert Token und speichert in Session
+6. Server setzt Cookie: `cjtp_auth_token` (8h gültig)
+7. Client speichert Token lokal
+8. Bei jedem REST API Call: Cookie wird mitgesendet → Session validiert
+
+**Problem war:**
+- Session wurde nicht früh genug gestartet
+- Keine Cookie-Persistenz → Session ging verloren bei neuen Requests
+- Permission Callback schlug fehl bei REST API Calls
+
+**Lösung:**
+- Session-Start in init Hook (Priorität 1)
+- Cookie-basierte Authentifizierung zusätzlich zur Session
+- Doppelte Prüfung: Session UND Cookie
+
+---
+
 ## Version 6.0.1 - KRITISCHER BUGFIX: Login-Authentifizierung
 
 **Veröffentlicht:** Oktober 2024
