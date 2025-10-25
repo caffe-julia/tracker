@@ -1,0 +1,14 @@
+WICHTIG: Version 5.3 - MySQL Integration
+
+Diese Version speichert Events in:
+1. localStorage (schnell, für aktuelle Session)
+2. WordPress MySQL DB (persistent, geräteübergreifend)
+
+Beim Laden:
+- Events werden aus WordPress DB geladen
+- Beim Speichern werden sie in BEIDE gespeichert
+
+Migration von localStorage zu MySQL:
+- Alte localStorage-Daten bleiben erhalten
+- Neue Events werden automatisch in MySQL gespeichert
+- Export-Funktion zeigt alle Events (aus MySQL)
