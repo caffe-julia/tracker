@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.5
+ * Version: 6.0.6
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.5');
+define('CJTP_VERSION', '6.0.6');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -168,34 +168,40 @@ class Caffe_Julia_Tracker_Pro {
 
     public function check_tracker_permission() {
         // Erlaube Zugriff wenn:
-        // 1. Benutzer ist mit Tracker-Passwort eingeloggt (Session)
-        // 2. ODER Benutzer hat gültigen Auth-Cookie
-        // 3. ODER Benutzer ist WordPress-Admin
+        // 1. Benutzer hat gültigen Auth-Token (aus Request Header)
+        // 2. ODER Benutzer ist WordPress-Admin
 
-        if (!session_id()) {
-            session_start();
-        }
+        // Prüfe Auth-Token aus Header
+        $has_valid_token = false;
+        $headers = getallheaders();
 
-        // Prüfe Session
-        $is_tracker_authenticated = isset($_SESSION['cjtp_authenticated']) && $_SESSION['cjtp_authenticated'] === true;
+        if (isset($headers['X-Tracker-Auth']) || isset($headers['x-tracker-auth'])) {
+            $token = isset($headers['X-Tracker-Auth']) ? $headers['X-Tracker-Auth'] : $headers['x-tracker-auth'];
 
-        // Prüfe Cookie
-        $has_valid_cookie = false;
-        if (isset($_COOKIE['cjtp_auth_token']) && isset($_SESSION['cjtp_token'])) {
-            $has_valid_cookie = $_COOKIE['cjtp_auth_token'] === $_SESSION['cjtp_token'];
+            // Prüfe Token in Datenbank
+            $stored_tokens = get_option('cjtp_auth_tokens', array());
+
+            if (isset($stored_tokens[$token])) {
+                $token_data = $stored_tokens[$token];
+
+                // Prüfe ob Token noch gültig ist (8 Stunden)
+                if ($token_data['expires'] > time()) {
+                    $has_valid_token = true;
+                } else {
+                    // Token abgelaufen - lösche ihn
+                    unset($stored_tokens[$token]);
+                    update_option('cjtp_auth_tokens', $stored_tokens);
+                }
+            }
         }
 
         // Prüfe WordPress-Admin
         $is_wp_admin = current_user_can('edit_posts');
 
-        return $is_tracker_authenticated || $has_valid_cookie || $is_wp_admin;
+        return $has_valid_token || $is_wp_admin;
     }
 
     public function handle_login($request) {
-        if (!session_id()) {
-            session_start();
-        }
-
         $data = $request->get_json_params();
         $password_hash = isset($data['passwordHash']) ? $data['passwordHash'] : '';
 
@@ -204,16 +210,27 @@ class Caffe_Julia_Tracker_Pro {
 
         // Vergleiche Hashes
         if ($password_hash === $stored_hash) {
-            // Login erfolgreich - setze Session
-            $_SESSION['cjtp_authenticated'] = true;
-            $_SESSION['cjtp_login_time'] = time();
-
-            // Setze auch einen Cookie für 8 Stunden
+            // Login erfolgreich - generiere Token
             $token = bin2hex(random_bytes(32));
-            $_SESSION['cjtp_token'] = $token;
 
-            // Cookie setzen (8 Stunden = 28800 Sekunden)
-            setcookie('cjtp_auth_token', $token, time() + 28800, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+            // Speichere Token in Datenbank
+            $stored_tokens = get_option('cjtp_auth_tokens', array());
+
+            // Cleanup: Lösche abgelaufene Tokens
+            $current_time = time();
+            foreach ($stored_tokens as $t => $data) {
+                if ($data['expires'] < $current_time) {
+                    unset($stored_tokens[$t]);
+                }
+            }
+
+            // Speichere neuen Token (gültig für 8 Stunden)
+            $stored_tokens[$token] = array(
+                'created' => $current_time,
+                'expires' => $current_time + 28800, // 8 Stunden
+            );
+
+            update_option('cjtp_auth_tokens', $stored_tokens);
 
             return rest_ensure_response(array(
                 'success' => true,

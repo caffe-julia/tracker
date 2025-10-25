@@ -419,19 +419,18 @@
 
                     const loginData = await loginResponse.json();
 
-                    if (loginData.success) {
-                        // Server-Login erfolgreich - PHP Session ist jetzt gesetzt
-                        // Generiere sicheren Session Token für Client
-                        const tokenArray = new Uint8Array(32);
-                        crypto.getRandomValues(tokenArray);
-                        const token = Array.from(tokenArray).map(b => b.toString(16).padStart(2, '0')).join('');
+                    if (loginData.success && loginData.token) {
+                        // Server-Login erfolgreich - speichere Token
+                        const token = loginData.token;
 
                         try {
-                            sessionStorage.setItem('caffeJuliaToken', token);
-                            sessionStorage.setItem('caffeJuliaTokenTime', Date.now().toString());
+                            // Speichere Token in localStorage (persistent!)
+                            localStorage.setItem('caffeJuliaAuthToken', token);
+                            localStorage.setItem('caffeJuliaTokenTime', Date.now().toString());
                         } catch(e) {
-                            console.log('SessionStorage nicht verfügbar');
+                            console.error('localStorage nicht verfügbar:', e);
                         }
+
                         isAuthenticated = true;
                         sessionToken = token;
                         errorMsg.style.display = 'none';
@@ -461,12 +460,35 @@
 
         function logout() {
             try {
-                sessionStorage.removeItem('caffeJuliaToken');
-                sessionStorage.removeItem('caffeJuliaTokenTime');
+                localStorage.removeItem('caffeJuliaAuthToken');
+                localStorage.removeItem('caffeJuliaTokenTime');
             } catch(e) {}
             isAuthenticated = false;
             sessionToken = null;
             location.reload();
+        }
+
+        // Hilfsfunktion: Hole Auth-Token
+        function getAuthToken() {
+            try {
+                return localStorage.getItem('caffeJuliaAuthToken');
+            } catch(e) {
+                return null;
+            }
+        }
+
+        // Hilfsfunktion: Get Headers mit Auth-Token
+        function getApiHeaders() {
+            const headers = {
+                'X-WP-Nonce': API_NONCE
+            };
+
+            const token = getAuthToken();
+            if (token) {
+                headers['X-Tracker-Auth'] = token;
+            }
+
+            return headers;
         }
 
         function startApp() {
@@ -503,9 +525,7 @@
         async function loadEventsFromWordPress() {
             try {
                 const response = await fetch(API_BASE + 'events', {
-                    headers: {
-                        'X-WP-Nonce': API_NONCE
-                    }
+                    headers: getApiHeaders()
                 });
 
                 if (!response.ok) {
@@ -527,12 +547,12 @@
                 const url = API_BASE + 'events' + (event.wpId ? '/' + event.wpId : '');
                 const method = event.wpId ? 'PUT' : 'POST';
 
+                const headers = getApiHeaders();
+                headers['Content-Type'] = 'application/json';
+
                 const response = await fetch(url, {
                     method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': API_NONCE
-                    },
+                    headers: headers,
                     body: JSON.stringify(event)
                 });
 
@@ -564,9 +584,7 @@
             try {
                 await fetch(API_BASE + 'events/' + event.wpId, {
                     method: 'DELETE',
-                    headers: {
-                        'X-WP-Nonce': API_NONCE
-                    }
+                    headers: getApiHeaders()
                 });
                 console.log('✅ Event gelöscht:', event.name);
                 return true;
