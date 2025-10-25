@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
- * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 6.0: Vollständige MySQL-Integration!
- * Version: 6.0.6
+ * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 7.0: WordPress-Authentifizierung!
+ * Version: 7.0.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,18 +14,13 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '6.0.6');
+define('CJTP_VERSION', '7.0.0');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 class Caffe_Julia_Tracker_Pro {
 
     public function __construct() {
-        // Session früh starten
-        add_action('init', array($this, 'start_session'), 1);
-        add_action('init', array($this, 'check_password_hash'), 2);
-
-        register_activation_hook(__FILE__, array($this, 'activate'));
         add_action('init', array($this, 'register_post_type'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_assets'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
@@ -37,50 +32,6 @@ class Caffe_Julia_Tracker_Pro {
         add_action('wp_ajax_cjtp_get_stats', array($this, 'get_statistics'));
     }
 
-    public function activate() {
-        // Setze Standard-Passwort wenn noch keins gesetzt ist
-        $existing_hash = get_option('cjtp_password_hash');
-
-        if (empty($existing_hash)) {
-            // Standard-Passwort: "CaffeJulia2025"
-            $default_password = 'CaffeJulia2025';
-            $salt = 'CaffeJulia2025SecureSalt';
-            $password_hash = hash('sha256', $default_password . $salt);
-
-            update_option('cjtp_password_hash', $password_hash);
-
-            // Log für Admin
-            error_log('Caffe Julia Tracker: Standard-Passwort gesetzt - "CaffeJulia2025"');
-        }
-    }
-
-    public function start_session() {
-        if (!session_id()) {
-            session_start();
-        }
-    }
-
-    public function check_password_hash() {
-        // Prüfe ob alter Hash aktiv ist und aktualisiere ihn
-        $current_hash = get_option('cjtp_password_hash');
-
-        // Alte Hashes (aus vorherigen Versionen)
-        $old_hashes = array(
-            'c03c1a054bd18b924e3d7134b2b0b7ce8b6d0e94a49893e1ae3af7c1cba2168c', // Alter Hash für "CyberSecure"
-        );
-
-        // Wenn alter Hash oder kein Hash vorhanden
-        if (empty($current_hash) || in_array($current_hash, $old_hashes)) {
-            // Setze neuen Standard-Hash
-            $default_password = 'CaffeJulia2025';
-            $salt = 'CaffeJulia2025SecureSalt';
-            $new_hash = hash('sha256', $default_password . $salt);
-
-            update_option('cjtp_password_hash', $new_hash);
-
-            error_log('Caffe Julia Tracker: Passwort-Hash aktualisiert auf v6.0.3 Standard');
-        }
-    }
 
     public function register_post_type() {
         register_post_type('cjtp_event', array(
@@ -130,13 +81,6 @@ class Caffe_Julia_Tracker_Pro {
     }
 
     public function register_rest_routes() {
-        // Login-Endpoint (öffentlich)
-        register_rest_route('cjtp/v1', '/login', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'handle_login'),
-            'permission_callback' => '__return_true',
-        ));
-
         // Events abrufen
         register_rest_route('cjtp/v1', '/events', array(
             'methods' => 'GET',
@@ -167,81 +111,11 @@ class Caffe_Julia_Tracker_Pro {
     }
 
     public function check_tracker_permission() {
-        // Erlaube Zugriff wenn:
-        // 1. Benutzer hat gültigen Auth-Token (aus Request Header)
-        // 2. ODER Benutzer ist WordPress-Admin
-
-        // Prüfe Auth-Token aus Header
-        $has_valid_token = false;
-        $headers = getallheaders();
-
-        if (isset($headers['X-Tracker-Auth']) || isset($headers['x-tracker-auth'])) {
-            $token = isset($headers['X-Tracker-Auth']) ? $headers['X-Tracker-Auth'] : $headers['x-tracker-auth'];
-
-            // Prüfe Token in Datenbank
-            $stored_tokens = get_option('cjtp_auth_tokens', array());
-
-            if (isset($stored_tokens[$token])) {
-                $token_data = $stored_tokens[$token];
-
-                // Prüfe ob Token noch gültig ist (8 Stunden)
-                if ($token_data['expires'] > time()) {
-                    $has_valid_token = true;
-                } else {
-                    // Token abgelaufen - lösche ihn
-                    unset($stored_tokens[$token]);
-                    update_option('cjtp_auth_tokens', $stored_tokens);
-                }
-            }
-        }
-
-        // Prüfe WordPress-Admin
-        $is_wp_admin = current_user_can('edit_posts');
-
-        return $has_valid_token || $is_wp_admin;
+        // Erlaube Zugriff nur für eingeloggte WordPress-Benutzer
+        // Die Seite selbst sollte mit WordPress "Privat" oder "Password Protected" Plugin geschützt werden
+        return current_user_can('edit_posts');
     }
 
-    public function handle_login($request) {
-        $data = $request->get_json_params();
-        $password_hash = isset($data['passwordHash']) ? $data['passwordHash'] : '';
-
-        // Hole den gespeicherten Password-Hash aus WordPress
-        $stored_hash = get_option('cjtp_password_hash', '');
-
-        // Vergleiche Hashes
-        if ($password_hash === $stored_hash) {
-            // Login erfolgreich - generiere Token
-            $token = bin2hex(random_bytes(32));
-
-            // Speichere Token in Datenbank
-            $stored_tokens = get_option('cjtp_auth_tokens', array());
-
-            // Cleanup: Lösche abgelaufene Tokens
-            $current_time = time();
-            foreach ($stored_tokens as $t => $data) {
-                if ($data['expires'] < $current_time) {
-                    unset($stored_tokens[$t]);
-                }
-            }
-
-            // Speichere neuen Token (gültig für 8 Stunden)
-            $stored_tokens[$token] = array(
-                'created' => $current_time,
-                'expires' => $current_time + 28800, // 8 Stunden
-            );
-
-            update_option('cjtp_auth_tokens', $stored_tokens);
-
-            return rest_ensure_response(array(
-                'success' => true,
-                'message' => 'Login erfolgreich',
-                'token' => $token,
-            ));
-        } else {
-            // Login fehlgeschlagen
-            return new WP_Error('invalid_password', 'Ungültiges Passwort', array('status' => 401));
-        }
-    }
 
     public function get_events($request) {
         $args = array(

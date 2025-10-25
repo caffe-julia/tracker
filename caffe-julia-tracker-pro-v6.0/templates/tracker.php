@@ -289,13 +289,9 @@
             console.log('SessionStorage nicht verfügbar');
         }
 
-        // Zeige Login-Screen wenn nicht authentifiziert
+        // Starte App direkt (ohne Login - WordPress übernimmt Authentifizierung)
         function initApp() {
-            if (!isAuthenticated) {
-                showLoginScreen();
-            } else {
-                initializeApp();
-            }
+            initializeApp();
         }
 
         // Starte sofort wenn DOM bereit
