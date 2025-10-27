@@ -1303,9 +1303,6 @@
                                 <input type="date" id="endDate">
                             </div>
                         </div>
-                        <div class="info-box">
-                            ℹ️ Bei mehrtägigen Events wird für jeden Tag ein separater Eintrag erstellt
-                        </div>
                     </div>
 
                     <div class="checkbox-group">
@@ -1320,10 +1317,6 @@
                             <option value="2">2 Mühlen</option>
                             <option value="3" selected>3 Mühlen</option>
                         </select>
-                    </div>
-
-                    <div class="info-box">
-                        ℹ️ Jede Mühle kann 1 Doppelbezug und 1 Einzelbezug erfassen
                     </div>
 
                     <button class="btn btn-primary" onclick="saveNewEvent()" style="width: 100%; margin-top: 16px;">
