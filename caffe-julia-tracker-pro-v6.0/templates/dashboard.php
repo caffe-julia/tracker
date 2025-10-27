@@ -42,6 +42,14 @@ if (!defined('ABSPATH')) exit;
             </a>
         </div>
 
+        <div class="cjtp-events-manager">
+            <h2>🗂️ Events verwalten</h2>
+            <p>Alle erfassten Events. Hier können Sie Events löschen.</p>
+            <div id="eventsTable">
+                <p>Lade Events...</p>
+            </div>
+        </div>
+
         <div class="cjtp-info">
             <h2>📱 Tracker verwenden</h2>
             <p>Fügen Sie den Tracker auf einer WordPress-Seite ein mit dem Shortcode:</p>
@@ -85,27 +93,60 @@ if (!defined('ABSPATH')) exit;
     font-weight: bold;
     color: #1d2327;
 }
-.cjtp-actions, .cjtp-info {
+.cjtp-actions, .cjtp-info, .cjtp-events-manager {
     background: white;
     border: 1px solid #c3c4c7;
     border-radius: 8px;
     padding: 24px;
     margin: 20px 0;
 }
-.cjtp-actions h2, .cjtp-info h2 {
+.cjtp-actions h2, .cjtp-info h2, .cjtp-events-manager h2 {
     margin-top: 0;
+}
+.cjtp-events-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+.cjtp-events-table th {
+    background: #f6f7f7;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #c3c4c7;
+    font-weight: 600;
+}
+.cjtp-events-table td {
+    padding: 12px;
+    border-bottom: 1px solid #dcdcde;
+}
+.cjtp-events-table tr:hover {
+    background: #f9f9f9;
+}
+.cjtp-delete-btn {
+    color: #b32d2e;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+.cjtp-delete-btn:hover {
+    background: #b32d2e;
+    color: white;
 }
 </style>
 
 <script>
 jQuery(document).ready(function($) {
+    const API_BASE = '<?php echo rest_url('cjtp/v1/'); ?>';
+    const API_NONCE = '<?php echo wp_create_nonce('wp_rest'); ?>';
+
     // Lade Statistiken
     $.ajax({
         url: ajaxurl,
         type: 'POST',
         data: {
             action: 'cjtp_get_stats',
-            nonce: '<?php echo wp_create_nonce('wp_rest'); ?>'
+            nonce: API_NONCE
         },
         success: function(response) {
             if (response.success) {
@@ -116,6 +157,91 @@ jQuery(document).ready(function($) {
                 $('#totalStunden').text(response.data.totalArbeitsstunden.toFixed(1));
             }
         }
+    });
+
+    // Lade Events
+    loadEvents();
+
+    function loadEvents() {
+        $.ajax({
+            url: API_BASE + 'events',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-WP-Nonce', API_NONCE);
+            },
+            success: function(events) {
+                renderEventsTable(events);
+            },
+            error: function() {
+                $('#eventsTable').html('<p style="color: #b32d2e;">Fehler beim Laden der Events.</p>');
+            }
+        });
+    }
+
+    function renderEventsTable(events) {
+        if (events.length === 0) {
+            $('#eventsTable').html('<p>Keine Events vorhanden.</p>');
+            return;
+        }
+
+        // Sortiere Events nach Datum (neueste zuerst)
+        events.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+        let html = '<table class="cjtp-events-table">';
+        html += '<thead><tr>';
+        html += '<th>Datum</th>';
+        html += '<th>Event Name</th>';
+        html += '<th>Arbeitsstunden</th>';
+        html += '<th>wpId</th>';
+        html += '<th>Aktion</th>';
+        html += '</tr></thead><tbody>';
+
+        events.forEach(function(event) {
+            html += '<tr>';
+            html += '<td>' + (event.date || '-') + '</td>';
+            html += '<td>' + (event.name || '-') + '</td>';
+            html += '<td>' + (event.workHours || 0) + ' h</td>';
+            html += '<td>' + (event.wpId ? event.wpId : '<span style="color: #b32d2e;">Keine wpId</span>') + '</td>';
+            html += '<td><a href="#" class="cjtp-delete-btn" data-id="' + event.wpId + '" data-name="' + (event.name || '') + '">🗑️ Löschen</a></td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        $('#eventsTable').html(html);
+    }
+
+    // Event-Löschung
+    $(document).on('click', '.cjtp-delete-btn', function(e) {
+        e.preventDefault();
+        const wpId = $(this).data('id');
+        const name = $(this).data('name');
+
+        if (!wpId) {
+            alert('❌ Event hat keine wpId und kann nicht gelöscht werden.\n\nBitte löschen Sie es direkt im Tracker unter /eventracker');
+            return;
+        }
+
+        if (!confirm('Event "' + name + '" wirklich löschen?')) {
+            return;
+        }
+
+        $.ajax({
+            url: API_BASE + 'events/' + wpId,
+            type: 'DELETE',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader('X-WP-Nonce', API_NONCE);
+            },
+            success: function() {
+                alert('✅ Event erfolgreich gelöscht!');
+                loadEvents(); // Neu laden
+                // Statistiken auch neu laden
+                location.reload();
+            },
+            error: function(xhr) {
+                console.error('Delete error:', xhr);
+                alert('❌ Fehler beim Löschen: ' + (xhr.responseJSON?.message || xhr.statusText));
+            }
+        });
     });
 });
 </script>

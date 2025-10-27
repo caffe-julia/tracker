@@ -1026,23 +1026,36 @@
         }
 
         async function deleteEvent(id) {
+            const event = events.find(e => e.id === id);
+            if (!event) {
+                alert('❌ Event nicht gefunden!');
+                return;
+            }
+
             if (confirm('Event wirklich löschen?')) {
                 try {
-                    // Lösche zuerst aus WordPress
-                    const success = await deleteEventFromWordPress(id);
-
-                    if (success) {
-                        // Dann aus lokalem Array entfernen
-                        events = events.filter(e => e.id !== id);
-                        currentView = 'overview';
-                        render();
-                        alert('✅ Event erfolgreich gelöscht!');
+                    // Wenn Event eine wpId hat, lösche aus WordPress
+                    if (event.wpId) {
+                        const success = await deleteEventFromWordPress(id);
+                        if (!success) {
+                            alert('❌ Fehler beim Löschen aus WordPress. Event wird trotzdem lokal entfernt.');
+                        }
                     } else {
-                        alert('❌ Fehler beim Löschen. Bitte versuchen Sie es erneut.');
+                        console.log('⚠️ Event hat keine wpId, lösche nur lokal');
                     }
+
+                    // Entferne aus lokalem Array (immer!)
+                    events = events.filter(e => e.id !== id);
+                    currentView = 'overview';
+                    render();
+                    alert('✅ Event erfolgreich gelöscht!');
                 } catch(e) {
                     console.error('Delete error:', e);
-                    alert('❌ Fehler beim Löschen: ' + e.message);
+                    // Auch bei Fehler: Entferne lokal
+                    events = events.filter(e => e.id !== id);
+                    currentView = 'overview';
+                    render();
+                    alert('⚠️ Event lokal gelöscht (WordPress-Fehler: ' + e.message + ')');
                 }
             }
         }
