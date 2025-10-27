@@ -225,22 +225,35 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        $.ajax({
-            url: API_BASE + 'events/' + wpId,
-            type: 'DELETE',
-            beforeSend: function(xhr) {
-                xhr.setRequestHeader('X-WP-Nonce', API_NONCE);
-            },
-            success: function() {
-                alert('✅ Event erfolgreich gelöscht!');
-                loadEvents(); // Neu laden
-                // Statistiken auch neu laden
-                location.reload();
-            },
-            error: function(xhr) {
-                console.error('Delete error:', xhr);
-                alert('❌ Fehler beim Löschen: ' + (xhr.responseJSON?.message || xhr.statusText));
+        // Verwende fetch API (wie im Tracker) statt jQuery AJAX
+        const deleteBtn = $(this);
+        deleteBtn.text('Löscht...');
+
+        fetch(API_BASE + 'events/' + wpId, {
+            method: 'DELETE',
+            headers: {
+                'X-WP-Nonce': API_NONCE,
+                'Content-Type': 'application/json'
             }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || response.statusText);
+                });
+            }
+            return response.json();
+        })
+        .then(() => {
+            alert('✅ Event erfolgreich gelöscht!');
+            loadEvents(); // Neu laden
+            // Statistiken auch neu laden
+            setTimeout(() => location.reload(), 500);
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            alert('❌ Fehler beim Löschen: ' + error.message);
+            deleteBtn.text('🗑️ Löschen');
         });
     });
 });
