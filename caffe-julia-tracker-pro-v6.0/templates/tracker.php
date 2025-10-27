@@ -612,13 +612,22 @@
         // Event aus WordPress löschen
         async function deleteEventFromWordPress(eventId) {
             const event = events.find(e => e.id === eventId);
-            if (!event || !event.wpId) return true;
+            if (!event || !event.wpId) {
+                console.log('⚠️ Event hat keine wpId, überspringe WordPress-Löschung');
+                return true;
+            }
 
             try {
-                await fetch(API_BASE + 'events/' + event.wpId, {
+                const response = await fetch(API_BASE + 'events/' + event.wpId, {
                     method: 'DELETE',
                     headers: getApiHeaders()
                 });
+
+                if (!response.ok) {
+                    console.error('❌ Löschen fehlgeschlagen:', response.status, response.statusText);
+                    return false;
+                }
+
                 console.log('✅ Event gelöscht:', event.name);
                 return true;
             } catch(e) {
@@ -1010,13 +1019,23 @@
 
         async function deleteEvent(id) {
             if (confirm('Event wirklich löschen?')) {
-                // Lösche zuerst aus WordPress
-                await deleteEventFromWordPress(id);
+                try {
+                    // Lösche zuerst aus WordPress
+                    const success = await deleteEventFromWordPress(id);
 
-                // Dann aus lokalem Array entfernen
-                events = events.filter(e => e.id !== id);
-                currentView = 'overview';
-                render();
+                    if (success) {
+                        // Dann aus lokalem Array entfernen
+                        events = events.filter(e => e.id !== id);
+                        currentView = 'overview';
+                        render();
+                        alert('✅ Event erfolgreich gelöscht!');
+                    } else {
+                        alert('❌ Fehler beim Löschen. Bitte versuchen Sie es erneut.');
+                    }
+                } catch(e) {
+                    console.error('Delete error:', e);
+                    alert('❌ Fehler beim Löschen: ' + e.message);
+                }
             }
         }
 
@@ -1026,20 +1045,32 @@
             const eventCount = eventGroup.length;
 
             if (confirm(`Gesamtes Event "${baseName}" mit allen ${eventCount} Tag(en) wirklich löschen?`)) {
-                // Lösche alle Events dieser Gruppe aus WordPress
-                for (const event of eventGroup) {
-                    await deleteEventFromWordPress(event.id);
+                try {
+                    // Lösche alle Events dieser Gruppe aus WordPress
+                    let allSuccess = true;
+                    for (const event of eventGroup) {
+                        const success = await deleteEventFromWordPress(event.id);
+                        if (!success) allSuccess = false;
+                    }
+
+                    if (allSuccess) {
+                        // Dann aus lokalem Array entfernen
+                        events = events.filter(e => {
+                            const eventBaseName = e.isPartOfMultiDay ? getEventBaseName(e.name) : e.name;
+                            return eventBaseName !== baseName;
+                        });
+
+                        currentView = 'overview';
+                        currentEventGroup = null;
+                        render();
+                        alert('✅ Event-Gruppe erfolgreich gelöscht!');
+                    } else {
+                        alert('⚠️ Einige Events konnten nicht gelöscht werden. Bitte Seite neu laden.');
+                    }
+                } catch(e) {
+                    console.error('Delete group error:', e);
+                    alert('❌ Fehler beim Löschen: ' + e.message);
                 }
-
-                // Dann aus lokalem Array entfernen
-                events = events.filter(e => {
-                    const eventBaseName = e.isPartOfMultiDay ? getEventBaseName(e.name) : e.name;
-                    return eventBaseName !== baseName;
-                });
-
-                currentView = 'overview';
-                currentEventGroup = null;
-                render();
             }
         }
 
@@ -1658,12 +1689,16 @@
                         <button class="btn btn-danger" style="margin-bottom: 12px;" onclick="if(confirm('Nur diesen Tag (${event.name}) löschen?')) { deleteEvent(${event.id}); }">
                             Nur diesen Tag löschen
                         </button>
-                        <button class="btn btn-danger" onclick="deleteEventGroup('${getEventBaseName(event.name)}')" style="background: #991b1b;">
+                        <button class="btn btn-danger" onclick="deleteEventGroup('${getEventBaseName(event.name)}')" style="background: #991b1b; margin-bottom: 16px;">
                             Gesamtes Event mit allen ${event.multiDayTotal} Tagen löschen
                         </button>
                     ` : `
-                        <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Event Löschen</button>
+                        <button class="btn btn-danger" onclick="deleteEvent(${event.id})" style="margin-bottom: 16px;">Event Löschen</button>
                     `}
+
+                    <button class="btn btn-success" onclick="${event.isPartOfMultiDay && currentEventGroup ? 'backToGroup()' : 'backToOverview()'}" style="width: 100%;">
+                        ← Zurück zur Übersicht
+                    </button>
                 </div>
             `;
         }
