@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 7.0: WordPress-Authentifizierung!
- * Version: 7.3.4
+ * Version: 7.3.5
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '7.3.4');
+define('CJTP_VERSION', '7.3.5');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -30,9 +30,37 @@ class Caffe_Julia_Tracker_Pro {
         // AJAX Actions
         add_action('wp_ajax_cjtp_export_csv', array($this, 'export_csv'));
         add_action('wp_ajax_cjtp_get_stats', array($this, 'get_statistics'));
+        add_action('wp_ajax_cjtp_delete_event', array($this, 'ajax_delete_event'));
 
         // Logout Redirect (hohe Priorität, um andere Plugins zu überschreiben)
         add_filter('logout_redirect', array($this, 'tracker_logout_redirect'), 999, 3);
+    }
+
+    public function ajax_delete_event() {
+        check_ajax_referer('wp_rest', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'Keine Berechtigung'), 403);
+        }
+
+        $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+
+        if (!$post_id) {
+            wp_send_json_error(array('message' => 'Keine Post ID angegeben'), 400);
+        }
+
+        $post = get_post($post_id);
+        if (!$post || $post->post_type !== 'cjtp_event') {
+            wp_send_json_error(array('message' => 'Event nicht gefunden'), 404);
+        }
+
+        $result = wp_delete_post($post_id, true);
+
+        if ($result) {
+            wp_send_json_success(array('message' => 'Event gelöscht'));
+        } else {
+            wp_send_json_error(array('message' => 'Löschen fehlgeschlagen'), 500);
+        }
     }
 
     public function tracker_logout_redirect($redirect_to, $requested_redirect_to, $user) {

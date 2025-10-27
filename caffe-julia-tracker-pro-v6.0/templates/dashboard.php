@@ -225,35 +225,32 @@ jQuery(document).ready(function($) {
             return;
         }
 
-        // Verwende fetch API (wie im Tracker) statt jQuery AJAX
+        // Verwende direkten AJAX-Handler
         const deleteBtn = $(this);
         deleteBtn.text('Löscht...');
 
-        fetch(API_BASE + 'events/' + wpId, {
-            method: 'DELETE',
-            headers: {
-                'X-WP-Nonce': API_NONCE,
-                'Content-Type': 'application/json'
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cjtp_delete_event',
+                post_id: wpId,
+                nonce: API_NONCE
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('✅ Event erfolgreich gelöscht!');
+                    location.reload();
+                } else {
+                    alert('❌ Fehler beim Löschen: ' + (response.data?.message || 'Unbekannter Fehler'));
+                    deleteBtn.text('🗑️ Löschen');
+                }
+            },
+            error: function(xhr) {
+                console.error('Delete error:', xhr);
+                alert('❌ Fehler beim Löschen: ' + xhr.statusText);
+                deleteBtn.text('🗑️ Löschen');
             }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.message || response.statusText);
-                });
-            }
-            return response.json();
-        })
-        .then(() => {
-            alert('✅ Event erfolgreich gelöscht!');
-            loadEvents(); // Neu laden
-            // Statistiken auch neu laden
-            setTimeout(() => location.reload(), 500);
-        })
-        .catch(error => {
-            console.error('Delete error:', error);
-            alert('❌ Fehler beim Löschen: ' + error.message);
-            deleteBtn.text('🗑️ Löschen');
         });
     });
 });
