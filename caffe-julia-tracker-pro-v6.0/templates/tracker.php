@@ -16,7 +16,7 @@
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="no-referrer">
     
-    <title>Caffe Julia - Event Tracker (Erweitert)</title>
+    <title>Caffe Julia - Event Tracker</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -491,15 +491,6 @@
             }
         }
 
-        function logout() {
-            try {
-                localStorage.removeItem('caffeJuliaAuthToken');
-                localStorage.removeItem('caffeJuliaTokenTime');
-            } catch(e) {}
-            isAuthenticated = false;
-            sessionToken = null;
-            location.reload();
-        }
 
         // Hilfsfunktion: Hole Auth-Token
         function getAuthToken() {
@@ -612,26 +603,43 @@
         // Event aus WordPress löschen
         async function deleteEventFromWordPress(eventId) {
             const event = events.find(e => e.id === eventId);
-            if (!event || !event.wpId) {
+            if (!event) {
+                console.error('❌ Event nicht gefunden:', eventId);
+                return false;
+            }
+
+            if (!event.wpId) {
                 console.log('⚠️ Event hat keine wpId, überspringe WordPress-Löschung');
                 return true;
             }
 
+            console.log('🗑️ Versuche Event zu löschen:', event.name, 'wpId:', event.wpId);
+
             try {
-                const response = await fetch(API_BASE + 'events/' + event.wpId, {
+                const url = API_BASE + 'events/' + event.wpId;
+                console.log('DELETE Request zu:', url);
+
+                const response = await fetch(url, {
                     method: 'DELETE',
                     headers: getApiHeaders()
                 });
 
+                console.log('Response Status:', response.status, response.statusText);
+
                 if (!response.ok) {
-                    console.error('❌ Löschen fehlgeschlagen:', response.status, response.statusText);
+                    const errorText = await response.text();
+                    console.error('❌ Löschen fehlgeschlagen:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorText
+                    });
                     return false;
                 }
 
-                console.log('✅ Event gelöscht:', event.name);
+                console.log('✅ Event erfolgreich gelöscht:', event.name);
                 return true;
             } catch(e) {
-                console.error('❌ Löschen fehlgeschlagen:', e);
+                console.error('❌ Löschen-Exception:', e);
                 return false;
             }
         }
@@ -1184,10 +1192,6 @@
             return `
                 <div class="card">
                     <h1>☕ Caffe Julia</h1>
-                    <p class="subtitle">Event Tracker (Erweitert mit Arbeitszeiterfassung & 3 Mühlen)</p>
-                    <button onclick="logout()" style="position: absolute; top: 24px; right: 24px; background: none; border: 1px solid #d97706; color: #d97706; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px;">
-                        🔒 Abmelden
-                    </button>
                 </div>
 
                 <div class="card">
