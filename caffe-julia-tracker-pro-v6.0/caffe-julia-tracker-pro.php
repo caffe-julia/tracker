@@ -3,7 +3,7 @@
  * Plugin Name: Caffe Julia Tracker Pro
  * Plugin URI: https://github.com/caffe-julia/tracker
  * Description: Professioneller Event-Tracker mit Mühlen, Getränken, Arbeitszeit - GENAU wie Ihr Original! 100% in WordPress, iPhone-optimiert. Version 7.0: WordPress-Authentifizierung!
- * Version: 7.2.0
+ * Version: 7.2.1
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: Caffe Julia
@@ -14,7 +14,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('CJTP_VERSION', '7.2.0');
+define('CJTP_VERSION', '7.2.1');
 define('CJTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CJTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -31,12 +31,12 @@ class Caffe_Julia_Tracker_Pro {
         add_action('wp_ajax_cjtp_export_csv', array($this, 'export_csv'));
         add_action('wp_ajax_cjtp_get_stats', array($this, 'get_statistics'));
 
-        // Logout Redirect
-        add_filter('logout_redirect', array($this, 'tracker_logout_redirect'), 10, 3);
+        // Logout Redirect (hohe Priorität, um andere Plugins zu überschreiben)
+        add_filter('logout_redirect', array($this, 'tracker_logout_redirect'), 999, 3);
     }
 
     public function tracker_logout_redirect($redirect_to, $requested_redirect_to, $user) {
-        // Nach Logout immer zu caffejulia.ch
+        // Nach Logout immer zu caffejulia.ch (unabhängig von anderen Redirects)
         return 'https://www.caffejulia.ch';
     }
 

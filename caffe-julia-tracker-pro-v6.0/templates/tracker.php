@@ -226,9 +226,46 @@
             .counter-btn { width: 36px; height: 36px; font-size: 18px; }
             .event-stats { grid-template-columns: 1fr; }
         }
+
+        /* Logout Button */
+        .logout-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: #dc2626;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            z-index: 1000;
+        }
+        .logout-btn:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 768px) {
+            .logout-btn {
+                top: 8px;
+                right: 8px;
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
+    <?php
+    // Logout-Button (nur sichtbar wenn eingeloggt)
+    if (is_user_logged_in()) {
+        $logout_url = wp_logout_url();
+        echo '<a href="' . esc_url($logout_url) . '" class="logout-btn">Abmelden</a>';
+    }
+    ?>
     <div class="container">
         <div id="app">
             <!-- Lade-Indikator -->
