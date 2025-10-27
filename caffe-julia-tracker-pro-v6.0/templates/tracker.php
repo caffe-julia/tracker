@@ -212,8 +212,8 @@
             .input-row { grid-template-columns: 1fr; gap: 12px; }
             .btn-group { flex-direction: column; }
             .btn { width: 100%; }
-            input[type="date"], 
-            input[type="time"], 
+            input[type="date"],
+            input[type="time"],
             input[type="number"],
             input[type="text"],
             select {
@@ -225,11 +225,74 @@
             .counter-value { font-size: 20px; min-width: 60px; }
             .counter-btn { width: 36px; height: 36px; font-size: 18px; }
             .event-stats { grid-template-columns: 1fr; }
+            .user-bar {
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px 16px;
+                text-align: center;
+            }
+            .user-info {
+                font-size: 14px;
+            }
+        }
+
+        /* User Bar Styles */
+        .user-bar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info {
+            color: #78350f;
+            font-weight: 600;
+        }
+        .user-actions a {
+            color: #d97706;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #fef3c7;
+            transition: all 0.2s;
+        }
+        .user-actions a:hover {
+            background: #fed7aa;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- WordPress User Bar -->
+        <?php if (is_user_logged_in()) :
+            $current_user = wp_get_current_user();
+            $logout_url = wp_logout_url(get_permalink());
+        ?>
+        <div class="user-bar">
+            <div class="user-info">
+                ☕ Willkommen, <?php echo esc_html($current_user->display_name); ?>!
+            </div>
+            <div class="user-actions">
+                <a href="<?php echo esc_url($logout_url); ?>">Abmelden</a>
+            </div>
+        </div>
+        <?php else :
+            $login_url = wp_login_url(get_permalink());
+        ?>
+        <div class="user-bar">
+            <div class="user-info">
+                🔒 Bitte melden Sie sich an
+            </div>
+            <div class="user-actions">
+                <a href="<?php echo esc_url($login_url); ?>">Anmelden</a>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div id="app">
             <!-- Lade-Indikator -->
             <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
