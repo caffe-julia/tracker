@@ -953,26 +953,26 @@
 
         function calculateWorkHours(event) {
             if (!event.workStartTime || !event.workEndTime) {
+                event.workHours = 0;
                 return '0.0';
             }
 
             const start = event.workStartTime.split(':');
             const end = event.workEndTime.split(':');
-            
+
             const startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
             let endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
-            
+
             // Handle overnight shifts
             if (endMinutes < startMinutes) {
                 endMinutes += 24 * 60;
             }
-            
+
             const totalMinutes = endMinutes - startMinutes - (event.workBreakMinutes || 0);
             const hours = (totalMinutes / 60).toFixed(2);
-            
-            // Update workHours field
+
+            // Update workHours field (nur lokal, Speichern erfolgt von aufrufender Funktion)
             event.workHours = parseFloat(hours);
-            saveEventToWordPress(event); // Async, fire and forget
 
             return hours;
         }
@@ -988,7 +988,14 @@
                 event.workEndTime = endTime;
                 event.workBreakMinutes = breakMinutes;
 
-                await saveEventToWordPress(event);
+                // Berechne Arbeitsstunden
+                calculateWorkHours(event);
+
+                // Speichere und lade neu
+                const success = await saveEventToWordPress(event);
+                if (success) {
+                    await loadEventsFromWordPress();
+                }
                 render();
             }
         }
