@@ -920,7 +920,12 @@
                     default:
                         event[field] = value;
                 }
-                await saveEventToWordPress(event);
+
+                // Speichere und lade Events neu, um Duplikate zu vermeiden
+                const success = await saveEventToWordPress(event);
+                if (success) {
+                    await loadEventsFromWordPress();
+                }
                 render();
             }
         }
@@ -936,7 +941,12 @@
                 } else {
                     event.muehlen[muehleIndex].einzelBezug[field] = validatedValue;
                 }
-                await saveEventToWordPress(event);
+
+                // Speichere und lade Events neu, um Duplikate zu vermeiden
+                const success = await saveEventToWordPress(event);
+                if (success) {
+                    await loadEventsFromWordPress();
+                }
                 render();
             }
         }
@@ -1011,7 +1021,10 @@
             const event = events.find(e => e.id === id);
             if (event) {
                 event[field] = (event[field] || 0) + 1;
-                await saveEventToWordPress(event);
+                const success = await saveEventToWordPress(event);
+                if (success) {
+                    await loadEventsFromWordPress();
+                }
                 render();
             }
         }
@@ -1020,7 +1033,10 @@
             const event = events.find(e => e.id === id);
             if (event && event[field] > 0) {
                 event[field]--;
-                await saveEventToWordPress(event);
+                const success = await saveEventToWordPress(event);
+                if (success) {
+                    await loadEventsFromWordPress();
+                }
                 render();
             }
         }
