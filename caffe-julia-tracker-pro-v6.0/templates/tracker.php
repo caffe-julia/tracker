@@ -1055,30 +1055,39 @@
                 return;
             }
 
-            if (confirm('Event wirklich löschen?')) {
+            console.log('🗑️ Lösche Event:', {id: id, name: event.name, wpId: event.wpId});
+
+            if (confirm('Event "' + event.name + '" wirklich löschen?')) {
                 try {
+                    let wpSuccess = true;
+
                     // Wenn Event eine wpId hat, lösche aus WordPress
                     if (event.wpId) {
-                        const success = await deleteEventFromWordPress(id);
-                        if (!success) {
-                            alert('❌ Fehler beim Löschen aus WordPress. Event wird trotzdem lokal entfernt.');
+                        console.log('📤 Sende DELETE Request an WordPress für wpId:', event.wpId);
+                        wpSuccess = await deleteEventFromWordPress(id);
+
+                        if (!wpSuccess) {
+                            console.error('❌ WordPress-Löschung fehlgeschlagen');
+                            if (!confirm('WordPress-Löschung fehlgeschlagen. Trotzdem lokal löschen?')) {
+                                return;
+                            }
+                        } else {
+                            console.log('✅ WordPress-Löschung erfolgreich');
                         }
                     } else {
                         console.log('⚠️ Event hat keine wpId, lösche nur lokal');
                     }
 
-                    // Entferne aus lokalem Array (immer!)
-                    events = events.filter(e => e.id !== id);
+                    // Lade Events neu von WordPress (um sicherzustellen, dass Löschung wirksam ist)
+                    await loadEventsFromWordPress();
+
                     currentView = 'overview';
                     render();
                     alert('✅ Event erfolgreich gelöscht!');
+
                 } catch(e) {
-                    console.error('Delete error:', e);
-                    // Auch bei Fehler: Entferne lokal
-                    events = events.filter(e => e.id !== id);
-                    currentView = 'overview';
-                    render();
-                    alert('⚠️ Event lokal gelöscht (WordPress-Fehler: ' + e.message + ')');
+                    console.error('❌ Delete error:', e);
+                    alert('❌ Fehler beim Löschen: ' + e.message);
                 }
             }
         }
@@ -1088,31 +1097,40 @@
             const eventGroup = grouped[baseName];
             const eventCount = eventGroup.length;
 
+            console.log('🗑️ Lösche Event-Gruppe:', baseName, 'mit', eventCount, 'Tag(en)');
+
             if (confirm(`Gesamtes Event "${baseName}" mit allen ${eventCount} Tag(en) wirklich löschen?`)) {
                 try {
                     // Lösche alle Events dieser Gruppe aus WordPress
-                    let allSuccess = true;
+                    let successCount = 0;
+                    let failCount = 0;
+
                     for (const event of eventGroup) {
+                        console.log('📤 Lösche Event:', event.name, 'wpId:', event.wpId);
                         const success = await deleteEventFromWordPress(event.id);
-                        if (!success) allSuccess = false;
+                        if (success) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
                     }
 
-                    if (allSuccess) {
-                        // Dann aus lokalem Array entfernen
-                        events = events.filter(e => {
-                            const eventBaseName = e.isPartOfMultiDay ? getEventBaseName(e.name) : e.name;
-                            return eventBaseName !== baseName;
-                        });
+                    console.log('📊 Lösch-Ergebnis:', successCount, 'erfolgreich,', failCount, 'fehlgeschlagen');
 
-                        currentView = 'overview';
-                        currentEventGroup = null;
-                        render();
+                    // Lade Events neu von WordPress
+                    await loadEventsFromWordPress();
+
+                    currentView = 'overview';
+                    currentEventGroup = null;
+                    render();
+
+                    if (failCount === 0) {
                         alert('✅ Event-Gruppe erfolgreich gelöscht!');
                     } else {
-                        alert('⚠️ Einige Events konnten nicht gelöscht werden. Bitte Seite neu laden.');
+                        alert(`⚠️ ${successCount} Event(s) gelöscht, ${failCount} fehlgeschlagen.`);
                     }
                 } catch(e) {
-                    console.error('Delete group error:', e);
+                    console.error('❌ Delete group error:', e);
                     alert('❌ Fehler beim Löschen: ' + e.message);
                 }
             }
